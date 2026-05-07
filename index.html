@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PV1 Facility Qualifier</title>
+
+<style>
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #222;
+}
+
+header {
+    background-color: #2d3e50;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+footer {
+    background-color: #2d3e50;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: calc(100vh - 140px);
+}
+
+.panel {
+    flex: 1 1 500px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.input-panel {
+    background-color: white;
+    border-right: 1px solid #ccc;
+}
+
+.output-panel {
+    background-color: #fafafa;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    resize: vertical;
+    font-family: monospace;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+#pv1Input {
+    height: 180px;
+}
+
+#mapInput {
+    height: 220px;
+}
+
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#output {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #ccc;
+    min-height: 250px;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
+
+@media (max-width: 768px) {
+
+    .container {
+        flex-direction: column;
+    }
+
+    .input-panel {
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>PV1 Facility Qualifier</h1>
+</header>
+
+<div class="container">
+
+    <div class="panel input-panel">
+
+        <h2>PV1 Input</h2>
+
+        <textarea
+            id="pv1Input"
+            placeholder="Paste PV1 segment here..."></textarea>
+
+        <h2>Facility Mapping Input</h2>
+
+        <textarea
+            id="mapInput"
+            placeholder="Example:
+ASU Field|BBHC
+Some Clinic|YKHC
+Another Site|SCF"></textarea>
+
+        <button onclick="qualifyPV1()">Start</button>
+
+    </div>
+
+    <div class="panel output-panel">
+
+        <h2>Output</h2>
+
+        <div id="output">
+Waiting for input...
+        </div>
+
+    </div>
+
+</div>
+
+<footer>
+    HL7 PV1 Qualification Utility
+</footer>
+
+<script>
+
+function qualifyPV1() {
+
+    const pv1Input =
+        document.getElementById("pv1Input").value.trim();
+
+    const mapInput =
+        document.getElementById("mapInput").value.trim();
+
+    const output =
+        document.getElementById("output");
+
+    if (!pv1Input.startsWith("PV1|")) {
+
+        output.innerText =
+`Input does not start with PV1|`;
+
+        return;
+    }
+
+    const fields = pv1Input.split("|");
+
+    if (fields.length < 4) {
+
+        output.innerText =
+`PV1.3 field not found`;
+
+        return;
+    }
+
+    const pv13 = fields[3];
+
+    const components = pv13.split("^");
+
+    if (components.length < 4) {
+
+        output.innerText =
+`PV1.3.4 component not found`;
+
+        return;
+    }
+
+    const facility =
+        components[3].trim();
+
+    const lines =
+        mapInput.split("\n");
+
+    let found = false;
+
+    let tho = "";
+
+    for (const line of lines) {
+
+        const cleanLine =
+            line.trim();
+
+        if (cleanLine === "") {
+            continue;
+        }
+
+        const parts =
+            cleanLine.split("|");
+
+        if (parts.length !== 2) {
+            continue;
+        }
+
+        const key =
+            parts[0].trim();
+
+        const value =
+            parts[1].trim();
+
+        if (key === facility) {
+
+            tho = value;
+
+            found = true;
+
+            break;
+        }
+    }
+
+    if (found) {
+
+        output.innerText =
+`Facility = ${facility}
+
+THO = ${tho}
+
+PV1 qualifies`;
+
+    } else {
+
+        output.innerText =
+`Facility = ${facility}
+
+No THO found
+
+PV1 does not qualify`;
+    }
+}
+
+</script>
+
+</body>
+</html>
